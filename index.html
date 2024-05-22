@@ -4,54 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wheel of Fortune</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        #wheel-container {
-            position: relative;
-            width: 500px;
-            height: 500px;
-            margin: 20px auto;
-        }
-        #wheel {
-            width: 100%;
-            height: 100%;
-        }
-        #pointer {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-bottom: 20px solid red;
-        }
-        #result {
-            font-size: 24px;
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Wheel of Fortune</h1>
-    <div>
-        <label><input type="radio" name="wheel-options" value="4"> 4 Values</label>
-        <label><input type="radio" name="wheel-options" value="6"> 6 Values</label>
-        <label><input type="radio" name="wheel-options" value="8"> 8 Values</label>
-        <label><input type="radio" name="wheel-options" value="16" checked> 16 Values</label>
+    <div class="container">
+        <h1>Wheel of Fortune</h1>
+        <div class="options">
+            <label>
+                <input type="radio" name="wheel-options" value="4"> 4 Values
+            </label>
+            <label>
+                <input type="radio" name="wheel-options" value="6"> 6 Values
+            </label>
+            <label>
+                <input type="radio" name="wheel-options" value="8"> 8 Values
+            </label>
+            <label>
+                <input type="radio" name="wheel-options" value="16"> 16 Values
+            </label>
+        </div>
+        <div class="wheel-container">
+            <canvas id="wheel" width="500" height="500"></canvas>
+            <div class="pointer"></div>
+        </div>
+        <button id="spin">Spin the Wheel</button>
+        <div id="result"></div>
     </div>
-    <div id="wheel-container">
-        <canvas id="wheel"></canvas>
-        <div id="pointer"></div>
-    </div>
-    <button id="spin">Spin the Wheel</button>
-    <div id="result">Winning Segment: </div>
+
     <script src="script.js"></script>
 </body>
 </html>
