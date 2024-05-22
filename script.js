@@ -30,6 +30,20 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(i + 1, wheelCanvas.width / 2 - 10, 10);
             ctx.restore();
         }
+
+        // Draw the arrow at the bottom right (at 5 o'clock position)
+        ctx.save();
+        ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
+        ctx.rotate(Math.PI / 4);  // Rotate to 45 degrees
+        ctx.translate(0, -wheelCanvas.width / 2 - 10);
+        ctx.beginPath();
+        ctx.moveTo(-10, -10);
+        ctx.lineTo(10, -10);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.restore();
     }
 
     function spinWheel() {
@@ -57,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 const finalAngle = (currentRotation % 360) * Math.PI / 180;
                 const segmentAngle = 2 * Math.PI / currentSegments;
-                const winningSegment = Math.floor((finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
+                const winningSegment = (currentSegments - Math.floor((finalAngle + segmentAngle / 2) / segmentAngle)) % currentSegments + 1;
                 resultDiv.innerText = `Winning Segment: ${winningSegment}`;
             }
         }
@@ -75,5 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     spinButton.addEventListener('click', spinWheel);
 
+    // Initial draw
+    currentRotation = 0; // Ensure initial angle is set to 0
     drawWheel(currentSegments);
 });
