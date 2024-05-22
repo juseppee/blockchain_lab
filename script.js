@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 const finalAngle = (currentAngle % 360) * Math.PI / 180;
                 const segmentAngle = 2 * Math.PI / currentSegments;
-                const winningSegment = Math.floor((finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
+                const winningSegment = Math.floor((2 * Math.PI - finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
                 resultDiv.innerText = `Winning Segment: ${winningSegment}`;
             }
         }
@@ -79,4 +79,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
     drawWheel(currentSegments);
 });
-s
