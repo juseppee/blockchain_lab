@@ -44,12 +44,17 @@ body {
 .dice-container {
     perspective: 1000px;
     margin-top: 50px;
+    position: relative;
+    width: 120px;
+    height: 120px;
 }
 
 .dice {
     width: 100px;
     height: 100px;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     transform-style: preserve-3d;
     transform: rotateX(0deg) rotateY(0deg);
     transition: transform 2s;
@@ -68,9 +73,6 @@ body {
     font-size: 2em;
 }
 
-.front  { transform: rotateY(  0deg) translateZ(50px); }
-.back   { transform: rotateY(180deg) translateZ(50px); }
-.right  { transform: rotateY( 90deg) translateZ(50px); }
-.left   { transform: rotateY(-90deg) translateZ(50px); }
-.top    { transform: rotateX( 90deg) translateZ(50px); }
-.bottom { transform: rotateX(-90deg) translateZ(50px); }
+.face-hidden {
+    display: none;
+}
