@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = wheelCanvas.getContext('2d');
     const spinButton = document.getElementById('spin');
     const resultDiv = document.getElementById('result');
-    let currentSegments = 4;
+    let currentSegments = 16; // Set initial segments to 16
     let currentRotation = 0;
 
     function drawWheel(segments) {
@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const elapsed = now - start;
             const easeOutCubic = t => (--t) * t * t + 1;
             const progress = easeOutCubic(Math.min(elapsed / duration, 1));
-            const angle = progress * spinAngle + currentRotation;
-            currentRotation = angle % 360;
+            const angle = progress * spinAngle;
+            currentRotation = (currentRotation + angle) % 360;
 
             ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
             ctx.save();
