@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const elapsed = now - start;
             const easeOutCubic = t => (--t) * t * t + 1;
             const progress = easeOutCubic(Math.min(elapsed / duration, 1));
-            const angle = progress * spinAngle + currentRotation;
-            currentRotation = angle % 360;
+            const angle = progress * spinAngle;
+            currentRotation = (currentRotation + angle) % 360;
 
             ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
             ctx.save();
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 const finalAngle = (currentRotation % 360) * Math.PI / 180;
                 const segmentAngle = 2 * Math.PI / currentSegments;
-                const winningSegment = Math.floor((finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
+                const winningSegment = Math.floor((2 * Math.PI - finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
                 resultDiv.innerText = `Winning Segment: ${winningSegment}`;
             }
         }
@@ -75,5 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     spinButton.addEventListener('click', spinWheel);
 
+    // Initial draw
+    currentRotation = 0; // Ensure initial angle is set to 0
     drawWheel(currentSegments);
 });
