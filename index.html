@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" >
+
+window.addEventListener('load', function()  {
+    if (window.ethereum==undefined)
+	{
+		console.log('Please install MetaMask!');
+		alert('Please install MetaMask!');
+	}
+		
+	else
+	{
+		ethereum
+          .request({
+		  method: 'net_version'  
+		})
+        .then((result) => {
+		 console.log("Сеть: " + result);
+        })
+        .catch((error) => {
+            console.log(error);
+       });	
+	 }
+});
+
+function getBalance() {
+
+	let address =[];
+      address[0] = document.getElementById("address").value;
+	 ethereum
+        .request({
+		  method: 'eth_getBalance',
+		  params: address	
+		})
+        .then((result) => {
+		console.log("Баланс: " + parseInt(result, 16)/1e18);
+		document.getElementById("output").innerHTML = 
+				"Баланс: " + parseInt(result, 16)/1e18;
+        })
+        .catch((error) => {
+           console.log(error);
+		document.getElementById("output").innerHTML =   error.message;
+       });
+ }
+</script>
+</head>
+<body>
+    <h1>Получение баланса ETH </h1>
+    <p>Введите адрес Ethereum:</p>
+    <input type="text" size="50" id="address" />
+    <button type="button" onClick="getBalance();">Получить баланс</button>
+    <br />
+    <br />
+    <div id="output"></div>
+</body>
+</html>
