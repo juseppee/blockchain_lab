@@ -24,21 +24,3 @@ body {
     width: 500px;
     height: 500px;
 }
-
-#wheel {
-    border: 5px solid #ccc;
-    border-radius: 50%;
-}
-
-.pointer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    margin-top: -250px;
-    margin-left: -10px;
-    border-style: solid;
-    border-width: 20px 10px 0;
-    border-color: #f00 transparent transparent;
-}

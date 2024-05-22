@@ -1,95 +1,136 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const wheelCanvas = document.getElementById('wheel');
-    const ctx = wheelCanvas.getContext('2d');
-    const spinButton = document.getElementById('spin');
-    const resultDiv = document.getElementById('result');
+    const padding = {top: 20, right: 40, bottom: 0, left: 0};
+    const w = 500 - padding.left - padding.right;
+    const h = 500 - padding.top - padding.bottom;
+    const r = Math.min(w, h) / 2;
+    let rotation = 0;
+    let oldrotation = 0;
+    let picked = 100000;
+    let oldpick = [];
+    const color = d3.scale.category20();
+    
     let currentSegments = 4;
-    let currentRotation = 0;
-
+    const resultDiv = document.getElementById('result');
+    
+    const svg = d3.select('#chart')
+        .append("svg")
+        .data([[]])
+        .attr("width",  w + padding.left + padding.right)
+        .attr("height", h + padding.top + padding.bottom);
+    
+    const container = svg.append("g")
+        .attr("class", "chartholder")
+        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
+    
+    const vis = container.append("g");
+    
+    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
+    
+    const arc = d3.svg.arc().outerRadius(r);
+    
     function drawWheel(segments) {
-        const angleStep = 2 * Math.PI / segments;
-        const colors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A5', '#FFFF33', '#33FFF6', '#FF8233', '#8D33FF'];
-
-        ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
-
-        for (let i = 0; i < segments; i++) {
-            ctx.beginPath();
-            ctx.moveTo(wheelCanvas.width / 2, wheelCanvas.height / 2);
-            ctx.arc(wheelCanvas.width / 2, wheelCanvas.height / 2, wheelCanvas.width / 2, i * angleStep, (i + 1) * angleStep);
-            ctx.fillStyle = colors[i % colors.length];
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-
-            ctx.save();
-            ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
-            ctx.rotate((i + 0.5) * angleStep);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "#000";
-            ctx.font = "20px Arial";
-            ctx.fillText(i + 1, wheelCanvas.width / 2 - 10, 10);
-            ctx.restore();
-        }
-
-        // Draw the arrow at the bottom right (at 5 o'clock position)
-        ctx.save();
-        ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
-        ctx.rotate(Math.PI / 4);  // Rotate to 45 degrees
-        ctx.translate(0, -wheelCanvas.width / 2 - 10);
-        ctx.beginPath();
-        ctx.moveTo(-10, -10);
-        ctx.lineTo(10, -10);
-        ctx.lineTo(0, 0);
-        ctx.closePath();
-        ctx.fillStyle = "red";
-        ctx.fill();
-        ctx.restore();
-    }
-
-    function spinWheel() {
-        const spinAngle = Math.random() * 360 + 720; // Spin at least 2 full rounds
-        const duration = 3000; // Spin for 3 seconds
-        const start = performance.now();
+        const data = Array.from({length: segments}, (_, i) => ({
+            label: `Segment ${i + 1}`,
+            value: i + 1,
+        }));
         
-        function animate(now) {
-            const elapsed = now - start;
-            const easeOutCubic = t => (--t) * t * t + 1;
-            const progress = easeOutCubic(Math.min(elapsed / duration, 1));
-            const angle = progress * spinAngle + currentRotation;
-            currentRotation = angle % 360;
-
-            ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
-            ctx.save();
-            ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
-            ctx.rotate(currentRotation * Math.PI / 180);
-            ctx.translate(-wheelCanvas.width / 2, -wheelCanvas.height / 2);
-            drawWheel(currentSegments);
-            ctx.restore();
-
-            if (elapsed < duration) {
-                requestAnimationFrame(animate);
-            } else {
-                const finalAngle = (currentRotation % 360) * Math.PI / 180;
-                const segmentAngle = 2 * Math.PI / currentSegments;
-                const winningSegment = (currentSegments - Math.floor((finalAngle + segmentAngle / 2) / segmentAngle)) % currentSegments + 1;
-                resultDiv.innerText = `Winning Segment: ${winningSegment}`;
-            }
-        }
-
-        requestAnimationFrame(animate);
+        svg.data([data]);
+        
+        const arcs = vis.selectAll("g.slice")
+            .data(pie(data))
+            .enter()
+            .append("g")
+            .attr("class", "slice");
+        
+        arcs.append("path")
+            .attr("fill", (d, i) => color(i))
+            .attr("d", arc);
+        
+        arcs.append("text")
+            .attr("transform", function(d) {
+                d.innerRadius = 0;
+                d.outerRadius = r;
+                d.angle = (d.startAngle + d.endAngle) / 2;
+                return `rotate(${d.angle * 180 / Math.PI - 90})translate(${d.outerRadius - 10})`;
+            })
+            .attr("text-anchor", "end")
+            .text((d, i) => data[i].label);
+        
+        container.on("click", spin);
+        
+        svg.append("g")
+            .attr("transform", `translate(${w + padding.left + padding.right}, ${(h / 2) + padding.top})`)
+            .append("path")
+            .attr("d", `M-${r * .15},0L0,${r * .05}L0,-${r * .05}Z`)
+            .style({"fill":"black"});
+        
+        container.append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 60)
+            .style({"fill":"white","cursor":"pointer"});
+        
+        container.append("text")
+            .attr("x", 0)
+            .attr("y", 15)
+            .attr("text-anchor", "middle")
+            .text("SPIN")
+            .style({"font-weight":"bold", "font-size":"30px"});
     }
-
+    
+    function spin() {
+        container.on("click", null);
+        
+        if (oldpick.length === currentSegments) {
+            container.on("click", null);
+            return;
+        }
+        
+        const ps = 360 / currentSegments;
+        const rng = Math.floor((Math.random() * 1440) + 360);
+        
+        rotation = (Math.round(rng / ps) * ps);
+        
+        picked = Math.round(currentSegments - (rotation % 360) / ps);
+        picked = picked >= currentSegments ? (picked % currentSegments) : picked;
+        
+        if (oldpick.indexOf(picked) !== -1) {
+            spin();
+            return;
+        } else {
+            oldpick.push(picked);
+        }
+        
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
+        
+        vis.transition()
+            .duration(15000) // Увеличиваем продолжительность для уменьшения скорости
+            .attrTween("transform", rotTween)
+            .each("end", function() {
+                d3.select(".slice:nth-child(" + (picked + 1) + ") path");
+                resultDiv.innerText = `Winning Segment: ${picked + 1}`;
+                oldrotation = rotation;
+                container.on("click", spin);
+            });
+    }
+    
+    function rotTween(to) {
+        const i = d3.interpolate(oldrotation % 360, rotation);
+        return function(t) {
+            return `rotate(${i(t)})`;
+        };
+    }
+    
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
-        radio.addEventListener('change', (event) => {
+        radio.addEventListener('change', event => {
             currentSegments = parseInt(event.target.value);
-            currentRotation = 0; // Reset the angle to 0 to point to the first segment
+            oldpick = [];
+            rotation = 0;
+            oldrotation = 0;
+            vis.selectAll('*').remove();
             drawWheel(currentSegments);
         });
     });
-
-    spinButton.addEventListener('click', spinWheel);
-
-    // Initial draw
-    currentRotation = 0; // Ensure initial angle is set to 0
+    
     drawWheel(currentSegments);
 });
