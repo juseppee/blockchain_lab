@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = "red";
         ctx.fill();
         ctx.restore();
+        ctx.save();
     }
 
     function spinWheel() {
