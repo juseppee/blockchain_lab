@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinButton = document.getElementById('spin');
     const resultDiv = document.getElementById('result');
     let currentSegments = 4;
+    let currentAngle = 0; // Track the current angle
 
     function drawWheel(segments) {
         const angleStep = 2 * Math.PI / segments;
@@ -40,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!start) start = timestamp;
             const progress = timestamp - start;
 
-            const currentAngle = easeOutCubic(progress, 0, spinAngle, duration);
+            const angle = easeOutCubic(progress, 0, spinAngle, duration);
+            currentAngle = (currentAngle + angle) % 360;
             ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
             ctx.save();
             ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
@@ -71,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
         radio.addEventListener('change', (event) => {
             currentSegments = parseInt(event.target.value);
+            currentAngle = 0; // Reset the angle to 0 to point to the first segment
             drawWheel(currentSegments);
         });
     });
