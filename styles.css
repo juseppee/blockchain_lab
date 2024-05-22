@@ -1,78 +1,44 @@
 body {
     font-family: Arial, sans-serif;
+    text-align: center;
     background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    flex-direction: column;
+    padding: 20px;
 }
 
 .container {
-    background-color: white;
+    display: inline-block;
+    background: #fff;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-.radio-buttons label {
-    display: block;
-    margin: 10px 0;
-}
-
-#rollButton {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
+.options label {
+    margin: 10px;
     cursor: pointer;
 }
 
-#rollButton:hover {
-    background-color: #0056b3;
-}
-
-#result {
-    margin-top: 20px;
-    font-size: 1.2em;
-}
-
-.dice-container {
-    perspective: 1000px;
-    margin-top: 50px;
+.wheel-container {
     position: relative;
-    width: 120px;
-    height: 120px;
+    margin: 20px auto;
+    width: 500px;
+    height: 500px;
 }
 
-.dice {
-    width: 100px;
-    height: 100px;
+#wheel {
+    border: 5px solid #ccc;
+    border-radius: 50%;
+}
+
+.pointer {
     position: absolute;
-    top: 0;
-    left: 0;
-    transform-style: preserve-3d;
-    transform: rotateX(0deg) rotateY(0deg);
-    transition: transform 2s;
-}
-
-.face {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    background-color: #007bff;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid #0056b3;
-    font-size: 2em;
-}
-
-.face-hidden {
-    display: none;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    margin-top: -250px;
+    margin-left: -10px;
+    border-style: solid;
+    border-width: 20px 10px 0;
+    border-color: #f00 transparent transparent;
 }

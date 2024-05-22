@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dice Roller</title>
+    <title>Wheel of Fortune</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Выбор кубика и бросок</h1>
-        <div class="radio-buttons">
+        <h1>Wheel of Fortune</h1>
+        <div class="options">
             <label>
-                <input type="radio" name="dice" value="4" checked>
-                4-х гранник
+                <input type="radio" name="wheel-options" value="4"> 4 Values
             </label>
             <label>
-                <input type="radio" name="dice" value="6">
-                6 гранник
+                <input type="radio" name="wheel-options" value="6"> 6 Values
             </label>
             <label>
-                <input type="radio" name="dice" value="8">
-                8 гранник
+                <input type="radio" name="wheel-options" value="8"> 8 Values
             </label>
             <label>
-                <input type="radio" name="dice" value="10">
-                10 гранник
+                <input type="radio" name="wheel-options" value="16"> 16 Values
             </label>
         </div>
-        <button id="rollButton">Бросить кубик</button>
-        <p id="result"></p>
-        <div id="diceContainer" class="dice-container"></div>
+        <div class="wheel-container">
+            <canvas id="wheel" width="500" height="500"></canvas>
+            <div class="pointer"></div>
+        </div>
+        <button id="spin">Spin the Wheel</button>
+        <div id="result"></div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

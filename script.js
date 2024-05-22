@@ -1,43 +1,82 @@
-document.getElementById('rollButton').addEventListener('click', function() {
-    const selectedDice = document.querySelector('input[name="dice"]:checked').value;
-    const result = rollDice(selectedDice);
-    document.getElementById('result').textContent = `Результат броска: ${result}`;
-    createDice(selectedDice);
-    rollDiceAnimation(result, selectedDice);
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const wheelCanvas = document.getElementById('wheel');
+    const ctx = wheelCanvas.getContext('2d');
+    const spinButton = document.getElementById('spin');
+    const resultDiv = document.getElementById('result');
+    let currentSegments = 4;
 
-function rollDice(sides) {
-    return Math.floor(Math.random() * sides) + 1;
-}
+    function drawWheel(segments) {
+        const angleStep = 2 * Math.PI / segments;
+        const colors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A5', '#FFFF33', '#33FFF6', '#FF8233', '#8D33FF'];
 
-function createDice(sides) {
-    const diceContainer = document.getElementById('diceContainer');
-    diceContainer.innerHTML = ''; // Clear previous dice
+        ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
 
-    const dice = document.createElement('div');
-    dice.className = 'dice';
-    dice.id = 'dice';
+        for (let i = 0; i < segments; i++) {
+            ctx.beginPath();
+            ctx.moveTo(wheelCanvas.width / 2, wheelCanvas.height / 2);
+            ctx.arc(wheelCanvas.width / 2, wheelCanvas.height / 2, wheelCanvas.width / 2, i * angleStep, (i + 1) * angleStep);
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
 
-    for (let i = 1; i <= 10; i++) {
-        const face = document.createElement('div');
-        face.className = 'face';
-        face.textContent = i;
-        if (i > sides) {
-            face.classList.add('face-hidden');
+            ctx.save();
+            ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
+            ctx.rotate((i + 0.5) * angleStep);
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#000";
+            ctx.font = "20px Arial";
+            ctx.fillText(i + 1, wheelCanvas.width / 2 - 10, 10);
+            ctx.restore();
         }
-        dice.appendChild(face);
     }
 
-    diceContainer.appendChild(dice);
-}
+    function spinWheel() {
+        const spinAngle = Math.random() * 360 + 720; // Spin at least 2 full rounds
+        const duration = 3000; // Spin for 3 seconds
+        let start = null;
 
-function rollDiceAnimation(result, sides) {
-    const dice = document.getElementById('dice');
-    const randomX = Math.floor(Math.random() * 360);
-    const randomY = Math.floor(Math.random() * 360);
+        function animate(timestamp) {
+            if (!start) start = timestamp;
+            const progress = timestamp - start;
 
-    const angleX = 90 * ((result - 1) % 4);
-    const angleY = 90 * Math.floor((result - 1) / 4);
+            const currentAngle = easeOutCubic(progress, 0, spinAngle, duration);
+            ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+            ctx.save();
+            ctx.translate(wheelCanvas.width / 2, wheelCanvas.height / 2);
+            ctx.rotate(currentAngle * Math.PI / 180);
+            ctx.translate(-wheelCanvas.width / 2, -wheelCanvas.height / 2);
+            drawWheel(currentSegments);
+            ctx.restore();
 
-    dice.style.transform = `rotateX(${randomX + angleX}deg) rotateY(${randomY + angleY}deg)`;
-}
+            if (progress < duration) {
+                requestAnimationFrame(animate);
+            } else {
+                const finalAngle = (currentAngle % 360) * Math.PI / 180;
+                const segmentAngle = 2 * Math.PI / currentSegments;
+                const winningSegment = Math.floor((finalAngle + segmentAngle / 2) / segmentAngle) % currentSegments + 1;
+                resultDiv.innerText = `Winning Segment: ${winningSegment}`;
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    function easeOutCubic(t, b, c, d) {
+        t /= d;
+        t--;
+        return c * (t * t * t + 1) + b;
+    }
+
+    document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
+        radio.addEventListener('change', (event) => {
+            currentSegments = parseInt(event.target.value);
+            drawWheel(currentSegments);
+        });
+    });
+
+    spinButton.addEventListener('click', spinWheel);
+
+    drawWheel(currentSegments);
+});
+s
