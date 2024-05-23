@@ -13,6 +13,20 @@ body {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+.balance {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.betting label {
+    display: block;
+    margin: 10px;
+}
+
+.betting input {
+    margin-left: 10px;
+}
+
 .options label {
     margin: 10px;
     cursor: pointer;

@@ -9,9 +9,25 @@
 <body>
     <div class="container">
         <h1>Wheel of Fortune</h1>
+        <div class="balance">
+            Баланс кошелька: <span id="wallet-balance">0 ETH</span>
+        </div>
+        <div class="wallet-address">
+            Номер кошелька: <span id="wallet-address"></span>
+        </div>
+        <div class="betting">
+            <label>
+                Сумма ставки:
+                <input type="number" id="bet-amount" required>
+            </label>
+            <label>
+                Значение ставки:
+                <input type="number" id="bet-value" required>
+            </label>
+        </div>
         <div class="options">
             <label>
-                <input type="radio" name="wheel-options" value="4"> 4 Values
+                <input type="radio" name="wheel-options" value="4" checked> 4 Values
             </label>
             <label>
                 <input type="radio" name="wheel-options" value="6"> 6 Values
@@ -32,5 +48,51 @@
 
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const walletBalanceSpan = document.getElementById('wallet-balance');
+            const walletAddressSpan = document.getElementById('wallet-address');
+
+            if (window.ethereum) {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const account = accounts[0];
+                walletAddressSpan.innerText = account;
+                
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    const newAccount = accounts[0];
+                    walletAddressSpan.innerText = newAccount;
+                });
+
+                window.ethereum.on('chainChanged', function (chainId) {
+                    // Handle chain changed event
+                });
+            } else {
+                walletAddressSpan.innerText = 'MetaMask не обнаружен';
+            }
+
+            function updateWalletBalance() {
+                if (window.ethereum) {
+                    web3.eth.getBalance(account, function(err, balance) {
+                        if (!err) {
+                            const balanceInEth = web3.utils.fromWei(balance, 'ether');
+                            walletBalanceSpan.innerText = `${balanceInEth} ETH`;
+                        }
+                    });
+                } else {
+                    walletBalanceSpan.innerText = 'MetaMask не обнаружен';
+                }
+            }
+
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    const newAccount = accounts[0];
+                    walletAddressSpan.innerText = newAccount;
+                    updateWalletBalance();
+                });
+
+                updateWalletBalance();
+            }
+        });
+    </script>
 </body>
 </html>

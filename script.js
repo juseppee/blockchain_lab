@@ -11,7 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentSegments = 4;
     const resultDiv = document.getElementById('result');
+    const betAmountInput = document.getElementById('bet-amount');
+    const betValueInput = document.getElementById('bet-value');
+    const spinButton = document.getElementById('spin');
+    const balanceSpan = document.getElementById('balance');
     
+    let balance = 1000; // Initial balance
+
     const svg = d3.select('#chart')
         .append("svg")
         .data([[]])
@@ -79,6 +85,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function spin() {
+        const betAmount = parseFloat(betAmountInput.value);
+        const betValue = parseInt(betValueInput.value);
+        
+        if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
+            alert("Пожалуйста, введите корректные значения ставки и числа.");
+            return;
+        }
+        
+        if (betAmount > balance) {
+            alert("Недостаточно средств на балансе.");
+            return;
+        }
+        
         container.on("click", null);
         
         if (oldpick.length === currentSegments) {
@@ -104,11 +123,20 @@ document.addEventListener('DOMContentLoaded', function() {
         rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
         
         vis.transition()
-            .duration(15000) // Увеличиваем продолжительность для уменьшения скорости
+            .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
             .attrTween("transform", rotTween)
             .each("end", function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
-                resultDiv.innerText = `Winning Segment: ${picked + 1}`;
+                const resultText = `Winning Segment: ${picked + 1}`;
+                if (picked + 1 === betValue) {
+                    const winAmount = betAmount * currentSegments;
+                    balance += winAmount;
+                    resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
+                } else {
+                    balance -= betAmount;
+                    resultDiv.innerText = `${resultText}\nВы проиграли.`;
+                }
+                balanceSpan.innerText = balance;
                 oldrotation = rotation;
                 container.on("click", spin);
             });
@@ -127,10 +155,12 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick = [];
             rotation = 0;
             oldrotation = 0;
-            vis.selectAll('*').remove();
+            vis.selectAll("*").remove();
             drawWheel(currentSegments);
         });
     });
+    
+    spinButton.addEventListener('click', spin);
     
     drawWheel(currentSegments);
 });
