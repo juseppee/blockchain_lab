@@ -10,10 +10,13 @@
     <div class="container">
         <h1>Wheel of Fortune</h1>
         <div class="balance">
-            Баланс кошелька: <span id="wallet-balance">0 ETH</span>
+            Баланс токена SepoliaETH: <span id="wallet-balance">0 SepoliaETH</span>
         </div>
         <div class="wallet-address">
             Номер кошелька: <span id="wallet-address"></span>
+        </div>
+        <div class="apikey-input">
+            API ключ Etherscan: <input type="text" id="apikey-input">
         </div>
         <div class="betting">
             <label>
@@ -52,46 +55,52 @@
         document.addEventListener('DOMContentLoaded', async function() {
             const walletBalanceSpan = document.getElementById('wallet-balance');
             const walletAddressSpan = document.getElementById('wallet-address');
+            const apiKeyInput = document.getElementById('apikey-input');
 
-            if (window.ethereum) {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                walletAddressSpan.innerText = account;
-                
-                window.ethereum.on('accountsChanged', function (accounts) {
-                    const newAccount = accounts[0];
-                    walletAddressSpan.innerText = newAccount;
-                });
+            let userAddress = ''; // Адрес пользователя из MetaMask
 
-                window.ethereum.on('chainChanged', function (chainId) {
-                    // Handle chain changed event
-                });
-            } else {
-                walletAddressSpan.innerText = 'MetaMask не обнаружен';
-            }
-
-            function updateWalletBalance() {
+            // Функция для получения адреса пользователя из MetaMask
+            async function getUserAddress() {
                 if (window.ethereum) {
-                    web3.eth.getBalance(account, function(err, balance) {
-                        if (!err) {
-                            const balanceInEth = web3.utils.fromWei(balance, 'ether');
-                            walletBalanceSpan.innerText = `${balanceInEth} ETH`;
-                        }
-                    });
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    userAddress = accounts[0];
+                    walletAddressSpan.innerText = userAddress;
+                    updateWalletBalance();
                 } else {
-                    walletBalanceSpan.innerText = 'MetaMask не обнаружен';
+                    walletAddressSpan.innerText = 'MetaMask не обнаружен';
                 }
             }
 
-            if (window.ethereum) {
-                window.ethereum.on('accountsChanged', function (accounts) {
-                    const newAccount = accounts[0];
-                    walletAddressSpan.innerText = newAccount;
-                    updateWalletBalance();
-                });
+            // Функция для обновления баланса токена
+            async function updateWalletBalance() {
+                const apiKey = apiKeyInput.value; // Получаем API ключ из поля ввода
 
-                updateWalletBalance();
+                const tokenContractAddress = 'адрес контракта SepoliaETH';
+                const tokenDecimals = 18; // Количество десятичных знаков для SepoliaETH
+
+                const apiUrl = `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${tokenContractAddress}&address=${userAddress}&tag=latest&apikey=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+
+                    if (data.status === '1') {
+                        const balance = parseFloat(data.result) / (10 ** tokenDecimals); // Преобразование баланса к формату с учетом десятичных знаков
+                        walletBalanceSpan.innerText = `${balance} SepoliaETH`;
+                    } else {
+                        throw new Error('Ошибка получения баланса токена.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    walletBalanceSpan.innerText = 'Ошибка получения баланса токена.';
+                }
             }
+
+            // Обработчик события изменения API ключа
+            apiKeyInput.addEventListener('change', updateWalletBalance);
+
+            // Получаем адрес пользователя из MetaMask
+            getUserAddress();
         });
     </script>
 </body>
