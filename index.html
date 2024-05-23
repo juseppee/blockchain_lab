@@ -10,13 +10,10 @@
     <div class="container">
         <h1>Wheel of Fortune</h1>
         <div class="balance">
-            Баланс токена SepoliaETH: <span id="wallet-balance">0 SepoliaETH</span>
+            Баланс кошелька: <span id="wallet-balance">0 ETH</span>
         </div>
         <div class="wallet-address">
             Номер кошелька: <span id="wallet-address"></span>
-        </div>
-        <div class="apikey-input">
-            API ключ Etherscan: <input type="text" id="apikey-input">
         </div>
         <div class="betting">
             <label>
@@ -47,61 +44,215 @@
             <div class="pointer"></div>
         </div>
         <div id="result"></div>
+        <button onclick="deposit()">Пополнить баланс</button>
+        <button onclick="withdraw()">Снять средства</button>
     </div>
 
     <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
     <script src="script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const walletBalanceSpan = document.getElementById('wallet-balance');
-            const walletAddressSpan = document.getElementById('wallet-address');
-            const apiKeyInput = document.getElementById('apikey-input');
+        const web3 = new Web3(window.ethereum);
 
-            let userAddress = ''; // Адрес пользователя из MetaMask
+        // ABI вашего контракта
+        const contractABI = [
+        [
+	{
+		"inputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "message",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "returnValue",
+				"type": "string"
+			}
+		],
+		"name": "PaymentEvent",
+		"type": "event"
+	},
+	{
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "fallback"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "balance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "doPayment",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getSegments",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "kill",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newSegments",
+				"type": "uint256"
+			}
+		],
+		"name": "setSegments",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawBalance",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+        ];
 
-            // Функция для получения адреса пользователя из MetaMask
-            async function getUserAddress() {
+        const contractAddress = 'адрес вашего контракта';
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        async function getBalance() {
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+            document.getElementById('wallet-address').innerText = userAddress;
+
+            const balance = await contract.methods.getBalance(userAddress).call();
+            document.getElementById('wallet-balance').innerText = `Баланс кошелька: ${web3.utils.fromWei(balance, 'ether')} ETH`;
+        }
+
+        async function deposit() {
+            const amount = prompt('Введите сумму для пополнения в ETH:');
+            if (!amount) return;
+
+            try {
+                await web3.eth.sendTransaction({
+                    from: (await web3.eth.getAccounts())[0],
+                    to: contractAddress,
+                    value: web3.utils.toWei(amount, 'ether')
+                });
+                alert('Баланс успешно пополнен.');
+                getBalance();
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка при попытке пополнения баланса.');
+            }
+        }
+
+        async function withdraw() {
+            const amount = prompt('Введите сумму для снятия в ETH:');
+            if (!amount) return;
+
+            try {
+                await contract.methods.withdrawBalance(web3.utils.toWei(amount, 'ether')).send({ from: (await web3.eth.getAccounts())[0] });
+                alert('Средства успешно сняты.');
+                getBalance();
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка при попытке снятия средств.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.ethereum) {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
                 if (window.ethereum) {
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    userAddress = accounts[0];
-                    walletAddressSpan.innerText = userAddress;
-                    updateWalletBalance();
-                } else {
-                    walletAddressSpan.innerText = 'MetaMask не обнаружен';
-                }
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                getBalance();
+            } else {
+                document.getElementById('wallet-address').innerText = 'MetaMask не обнаружен';
             }
-
-            // Функция для обновления баланса токена
-            async function updateWalletBalance() {
-                const apiKey = apiKeyInput.value; // Получаем API ключ из поля ввода
-
-                const tokenContractAddress = 'адрес контракта SepoliaETH';
-                const tokenDecimals = 18; // Количество десятичных знаков для SepoliaETH
-
-                const apiUrl = `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${tokenContractAddress}&address=${userAddress}&tag=latest&apikey=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-
-                    if (data.status === '1') {
-                        const balance = parseFloat(data.result) / (10 ** tokenDecimals); // Преобразование баланса к формату с учетом десятичных знаков
-                        walletBalanceSpan.innerText = `${balance} SepoliaETH`;
-                    } else {
-                        throw new Error('Ошибка получения баланса токена.');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    walletBalanceSpan.innerText = 'Ошибка получения баланса токена.';
-                }
-            }
-
-            // Обработчик события изменения API ключа
-            apiKeyInput.addEventListener('change', updateWalletBalance);
-
-            // Получаем адрес пользователя из MetaMask
-            getUserAddress();
         });
     </script>
 </body>
 </html>
+
