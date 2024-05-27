@@ -231,9 +231,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         // Пример обработки события
-        contract.events.PaymentEvent({}, (error, event) => {
-            console.log(event.returnValues);
-        });
+        contract.events.PaymentEvent()
+    .on('data', (event) => {
+        console.log(event.returnValues);
+        // Здесь вы можете обработать полученное событие
+    })
+    .on('error', (error) => {
+        console.error('Error fetching events:', error);
+    });
 
         // Обработчик изменения количества сегментов
         document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
