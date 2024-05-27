@@ -117,21 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "function"
         },
         {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "payoutToUser",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
             "constant": true,
             "inputs": [],
             "name": "balance",
@@ -191,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "stateMutability": "view",
             "type": "function"
         }
-    ];
+    ]
 
     const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
     let web3;
@@ -297,67 +282,57 @@ document.addEventListener('DOMContentLoaded', function() {
     async function spin() {
         const betAmount = parseFloat(betAmountInput.value);
         const betValue = parseInt(betValueInput.value);
-    
-        if (isNaN(betAmount) || isNaN(betValue) || betAmount <= 0 || betValue <= 0 || betValue > currentSegments) {
-            alert("Введите правильные ставки.");
-            return;
-        }
-    
-        // Обновляем баланс перед вращением
-        await updateBalances();
         
-        const contractBalance = parseFloat(contractBalanceSpan.innerText);
-        if (betAmount > contractBalance) {
-            alert("Ставка превышает баланс контракта.");
+        if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
+            alert("Пожалуйста, введите корректные значения ставки и числа.");
             return;
         }
-    
-        if (betAmount > parseFloat(balanceSpan.innerText)) {
-            alert("Недостаточно средств для ставки.");
+
+        await deposit();
+
+        container.on("click", null);
+
+        if (oldpick.length === currentSegments) {
+            container.on("click", null);
             return;
         }
-    
+        
         const ps = 360 / currentSegments;
-        const pieslice = Math.round(1440 / currentSegments);
         const rng = Math.floor((Math.random() * 1440) + 360);
-    
+        
         rotation = (Math.round(rng / ps) * ps);
-    
+        
         picked = Math.round(currentSegments - (rotation % 360) / ps);
         picked = picked >= currentSegments ? (picked % currentSegments) : picked;
-    
+        
         if (oldpick.indexOf(picked) !== -1) {
-            d3.select(this).call(spin);
+            spin();
             return;
         } else {
             oldpick.push(picked);
         }
         
-        rotation += 90 - Math.round(ps / 2);
-    
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
+        
         vis.transition()
-            .duration(3000)
+            .duration(5000)
             .attrTween("transform", rotTween)
             .each("end", async function() {
-                d3.select(".slice:nth-child(" + (picked + 1) + ") path")
-                    .attr("fill", "#111");
-    
-                resultDiv.innerText = `Вы выпали на: ${picked + 1}`;
-                
+                d3.select(".slice:nth-child(" + (picked + 1) + ") path");
+                const resultText = `Выигрышный сегмент: ${picked + 1}`;
                 if (picked + 1 === betValue) {
-                    resultDiv.innerText += " Вы выиграли!";
-                    const payoutAmount = betAmount * currentSegments;
-    
-                    await contract.methods.payoutToUser(web3.utils.toWei(payoutAmount.toString(), 'ether')).send({
-                        from: userAccount
+                    const winAmount = betAmount * currentSegments;
+                    await contract.methods.doPayment().send({
+                        from: userAccount,
+                        value: web3.utils.toWei(winAmount.toString(), 'ether')
                     });
-    
-                    await updateBalances();
+                    resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
-                    resultDiv.innerText += " Вы проиграли.";
+                    resultDiv.innerText = `${resultText}\nВы проиграли.`;
                 }
-    
+                updateBalances();
                 oldrotation = rotation;
+                container.on("click", spin);
             });
     }
     
@@ -368,11 +343,22 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    spinButton.addEventListener('click', spin);
+    document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentSegments = parseInt(this.value);
+            vis.selectAll('*').remove(); // Очистить старые сегменты
+            drawWheel(currentSegments);
+        });
+    });
+
+    spinButton.addEventListener('click', async function() {
+        await deposit();
+        spin();
+    });
+
     depositButton.addEventListener('click', deposit);
     withdrawButton.addEventListener('click', withdraw);
-    
-    initWeb3();
+
     drawWheel(currentSegments);
-    });
-    
+    initWeb3();
+});
