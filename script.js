@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function drawWheel(segments) {
         const data = Array.from({length: segments}, (_, i) => ({
-            label: `Segment ${i + 1}`,
+            label: `Значение ${i + 1}`,
             value: i + 1,
         }));
         
