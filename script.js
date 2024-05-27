@@ -163,4 +163,36 @@ document.addEventListener('DOMContentLoaded', function() {
     spinButton.addEventListener('click', spin);
     
     drawWheel(currentSegments);
+
+    // MetaMask Integration
+    async function initializeMetaMask() {
+        if (window.ethereum === undefined) {
+            alert('Please install MetaMask!');
+        } else {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const account = accounts[0];
+                console.log('Connected account:', account);
+                getBalance(account);
+            } catch (error) {
+                console.error('Error connecting to MetaMask:', error);
+            }
+        }
+    }
+
+    async function getBalance(account) {
+        try {
+            const balance = await ethereum.request({
+                method: 'eth_getBalance',
+                params: [account, 'latest']
+            });
+            const ethBalance = parseInt(balance, 16) / 1e18;
+            console.log('Баланс:', ethBalance);
+            balanceSpan.innerText = ethBalance.toFixed(4); // Display ETH balance
+        } catch (error) {
+            console.error('Error getting balance:', error);
+        }
+    }
+
+    initializeMetaMask();
 });
