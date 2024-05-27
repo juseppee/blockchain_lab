@@ -19,58 +19,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const depositButton = document.getElementById('deposit');
     const withdrawButton = document.getElementById('withdraw');
     
-    let balance = 0;
+    let balance = 1000; // Initial balance
+    let userAccount;
+    let web3;
+    let contract;
 
-    const svg = d3.select('#chart')
-        .append("svg")
-        .data([[]])
-        .attr("width",  w + padding.left + padding.right)
-        .attr("height", h + padding.top + padding.bottom);
-    
-    const container = svg.append("g")
-        .attr("class", "chartholder")
-        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
-    
-    const vis = container.append("g");
-    
-    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
-    
-    const arc = d3.svg.arc().outerRadius(r);
-    
+    const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
     const contractABI = [
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "doPayment",
-            "outputs": [],
-            "payable": true,
-            "stateMutability": "payable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "kill",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "newSegments",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setSegments",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
         {
             "inputs": [],
             "payable": false,
@@ -102,21 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "fallback"
         },
         {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "withdrawBalance",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
             "constant": true,
             "inputs": [],
             "name": "balance",
@@ -129,6 +69,15 @@ document.addEventListener('DOMContentLoaded', function() {
             ],
             "payable": false,
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "doPayment",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
             "type": "function"
         },
         {
@@ -162,6 +111,15 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "function"
         },
         {
+            "constant": false,
+            "inputs": [],
+            "name": "kill",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
             "constant": true,
             "inputs": [],
             "name": "owner",
@@ -175,13 +133,53 @@ document.addEventListener('DOMContentLoaded', function() {
             "payable": false,
             "stateMutability": "view",
             "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "payoutToUser",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "newSegments",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setSegments",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawBalance",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
         }
-    ]
-
-    const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
-    let web3;
-    let contract;
-    let userAccount;
+    ];
 
     async function initWeb3() {
         if (window.ethereum) {
@@ -196,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("User denied account access");
             }
         } else {
+            console.log('Please install MetaMask!');
             alert('Please install MetaMask!');
         }
     }
@@ -209,23 +208,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function deposit() {
-        const depositAmount = betAmountInput.value;
-        if (depositAmount <= 0) return;
-
+        const amount = parseFloat(betAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
         await contract.methods.doPayment().send({
             from: userAccount,
-            value: web3.utils.toWei(depositAmount, 'ether')
+            value: web3.utils.toWei(amount.toString(), 'ether')
         });
         updateBalances();
     }
 
     async function withdraw() {
-        const withdrawAmount = betAmountInput.value;
-        if (withdrawAmount <= 0) return;
-
-        await contract.methods.withdrawBalance(web3.utils.toWei(withdrawAmount, 'ether')).send({
-            from: userAccount
-        });
+        const amount = parseFloat(prompt('Enter amount to withdraw:'));
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+        await contract.methods.withdrawBalance(web3.utils.toWei(amount.toString(), 'ether')).send({ from: userAccount });
         updateBalances();
     }
 
@@ -287,11 +288,14 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Пожалуйста, введите корректные значения ставки и числа.");
             return;
         }
-
-        await deposit();
-
+        
+        if (betAmount > balance) {
+            alert("Недостаточно средств на балансе.");
+            return;
+        }
+        
         container.on("click", null);
-
+        
         if (oldpick.length === currentSegments) {
             container.on("click", null);
             return;
@@ -322,11 +326,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const resultText = `Выигрышный сегмент: ${picked + 1}`;
                 if (picked + 1 === betValue) {
                     const winAmount = betAmount * currentSegments;
-                    await contract.methods.doPayment().send({
-                        from: userAccount,
-                        value: web3.utils.toWei(winAmount.toString(), 'ether')
-                    });
-                    resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
+                    try {
+                        await contract.methods.withdrawBalance(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: userAccount });
+                        resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
+                    } catch (error) {
+                        console.error("Ошибка при выплате: ", error);
+                        resultDiv.innerText = `${resultText}\nПроизошла ошибка при выплате.`;
+                    }
                 } else {
                     resultDiv.innerText = `${resultText}\nВы проиграли.`;
                 }
@@ -346,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
         radio.addEventListener('change', function() {
             currentSegments = parseInt(this.value);
-            vis.selectAll('*').remove(); // Очистить старые сегменты
+            vis.selectAll('*').remove();
             drawWheel(currentSegments);
         });
     });
