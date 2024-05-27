@@ -154,6 +154,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const accounts = await web3.eth.getAccounts();
         const account = accounts[0];
 
+        // Получение прошлых событий
+        contract.getPastEvents('PaymentEvent', { fromBlock: 0, toBlock: 'latest' }, (error, events) => {
+            if (error) {
+                console.error('Error fetching events:', error);
+            } else {
+                console.log('Fetched events:', events);
+                // Здесь вы можете обработать полученные события
+            }
+        });
+
         const balanceSpan = document.getElementById('balance');
         const betAmountInput = document.getElementById('bet-amount');
         const betValueInput = document.getElementById('bet-value');
