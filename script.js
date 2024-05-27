@@ -16,13 +16,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinButton = document.getElementById('spin');
     const balanceSpan = document.getElementById('balance');
     const contractBalanceSpan = document.getElementById('contract-balance');
+    
+    let balance = 0;
 
-    let balance = 1000; // Initial balance
-
-    // Initialize web3
-    let web3;
-    let contract;
-    const contractAddress = '0xd5A8400aF67526533216aF6DF3E800Ab4245741e';
+    const svg = d3.select('#chart')
+        .append("svg")
+        .data([[]])
+        .attr("width",  w + padding.left + padding.right)
+        .attr("height", h + padding.top + padding.bottom);
+    
+    const container = svg.append("g")
+        .attr("class", "chartholder")
+        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
+    
+    const vis = container.append("g");
+    
+    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
+    
+    const arc = d3.svg.arc().outerRadius(r);
+    
     const contractABI = [
         {
             "constant": false,
@@ -164,61 +176,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
+    const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
+    let web3;
+    let contract;
+    let userAccount;
+
     async function initWeb3() {
         if (window.ethereum) {
             web3 = new Web3(window.ethereum);
             try {
                 await window.ethereum.enable();
-                contract = new web3.eth.Contract(contractABI, contractAddress);
                 const accounts = await web3.eth.getAccounts();
-                web3.eth.defaultAccount = accounts[0];
+                userAccount = accounts[0];
+                contract = new web3.eth.Contract(contractABI, contractAddress);
                 updateBalances();
             } catch (error) {
                 console.error("User denied account access");
             }
-        } else if (window.web3) {
-            web3 = new Web3(web3.currentProvider);
-            contract = new web3.eth.Contract(contractABI, contractAddress);
-            updateBalances();
         } else {
-            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+            alert('Please install MetaMask!');
         }
     }
 
     async function updateBalances() {
-        const balance = await web3.eth.getBalance(web3.eth.defaultAccount);
+        const balance = await web3.eth.getBalance(userAccount);
         balanceSpan.innerText = web3.utils.fromWei(balance, 'ether');
+
         const contractBalance = await contract.methods.getBalance().call();
         contractBalanceSpan.innerText = web3.utils.fromWei(contractBalance, 'ether');
     }
 
     async function deposit() {
-        const amount = web3.utils.toWei(betAmountInput.value, 'ether');
-        await contract.methods.doPayment().send({ from: web3.eth.defaultAccount, value: amount });
+        const depositAmount = betAmountInput.value;
+        if (depositAmount <= 0) return;
+
+        await contract.methods.doPayment().send({
+            from: userAccount,
+            value: web3.utils.toWei(depositAmount, 'ether')
+        });
         updateBalances();
     }
 
-    async function withdraw(amount) {
-        await contract.methods.withdrawBalance(web3.utils.toWei(amount, 'ether')).send({ from: web3.eth.defaultAccount });
+    async function withdraw() {
+        const withdrawAmount = betAmountInput.value;
+        if (withdrawAmount <= 0) return;
+
+        await contract.methods.withdrawBalance(web3.utils.toWei(withdrawAmount, 'ether')).send({
+            from: userAccount
+        });
         updateBalances();
     }
 
-    const svg = d3.select('#chart')
-        .append("svg")
-        .data([[]])
-        .attr("width",  w + padding.left + padding.right)
-        .attr("height", h + padding.top + padding.bottom);
-    
-    const container = svg.append("g")
-        .attr("class", "chartholder")
-        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
-    
-    const vis = container.append("g");
-    
-    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
-    
-    const arc = d3.svg.arc().outerRadius(r);
-    
     function drawWheel(segments) {
         const data = Array.from({length: segments}, (_, i) => ({
             label: `Значение ${i + 1}`,
@@ -277,17 +285,11 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Пожалуйста, введите корректные значения ставки и числа.");
             return;
         }
-        
-        const weiBetAmount = web3.utils.toWei(betAmountInput.value, 'ether');
-        
-        const userBalance = await contract.methods.getBalance().call({ from: web3.eth.defaultAccount });
-        if (weiBetAmount > userBalance) {
-            alert("Недостаточно средств на балансе контракта.");
-            return;
-        }
+
+        await deposit();
 
         container.on("click", null);
-        
+
         if (oldpick.length === currentSegments) {
             container.on("click", null);
             return;
@@ -308,23 +310,25 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick.push(picked);
         }
         
-        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
         
         vis.transition()
-            .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
+            .duration(5000)
             .attrTween("transform", rotTween)
             .each("end", async function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
                 const resultText = `Winning Segment: ${picked + 1}`;
-                let winAmount = 0;
                 if (picked + 1 === betValue) {
-                    winAmount = betAmount * currentSegments;
-                    await contract.methods.withdrawBalance(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: web3.eth.defaultAccount });
+                    const winAmount = betAmount * currentSegments;
+                    await contract.methods.doPayment().send({
+                        from: userAccount,
+                        value: web3.utils.toWei(winAmount.toString(), 'ether')
+                    });
                     resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
                     resultDiv.innerText = `${resultText}\nВы проиграли.`;
                 }
-                await updateBalances();
+                updateBalances();
                 oldrotation = rotation;
                 container.on("click", spin);
             });
