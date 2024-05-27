@@ -312,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick.push(picked);
         }
         
-        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 
         rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
         
         vis.transition()
