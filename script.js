@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinButton = document.getElementById('spin');
     const balanceSpan = document.getElementById('balance');
     const contractBalanceSpan = document.getElementById('contract-balance');
+    const depositButton = document.getElementById('deposit');
+    const withdrawButton = document.getElementById('withdraw');
     
     let balance = 0;
 
@@ -174,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "stateMutability": "view",
             "type": "function"
         }
-    ];
+    ]
 
     const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
     let web3;
@@ -310,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick.push(picked);
         }
         
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 
         rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
         
         vis.transition()
@@ -317,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .attrTween("transform", rotTween)
             .each("end", async function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
-                const resultText = `Winning Segment: ${picked + 1}`;
+                const resultText = `Выигрышный сегмент: ${picked + 1}`;
                 if (picked + 1 === betValue) {
                     const winAmount = betAmount * currentSegments;
                     await contract.methods.doPayment().send({
@@ -342,20 +345,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
-        radio.addEventListener('change', event => {
-            currentSegments = parseInt(event.target.value);
-            oldpick = [];
-            rotation = 0;
-            oldrotation = 0;
-            vis.selectAll("*").remove();
+        radio.addEventListener('change', function() {
+            currentSegments = parseInt(this.value);
+            vis.selectAll('*').remove(); // Очистить старые сегменты
             drawWheel(currentSegments);
         });
     });
-    
+
     spinButton.addEventListener('click', async function() {
         await deposit();
         spin();
     });
+
+    depositButton.addEventListener('click', deposit);
+    withdrawButton.addEventListener('click', withdraw);
 
     drawWheel(currentSegments);
     initWeb3();
