@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wheel of Fortune</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://d3js.org/d3.v3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.5.0/dist/web3.min.js"></script>
-    <script src="script.js" defer></script>
 </head>
 <body>
     <div class="container">
         <h1>Колесо рандома</h1>
         <div class="balance">
-            Баланс: <span id="balance">1000</span> wei
+            Баланс: <span id="balance">1000</span>
         </div>
         <div class="betting">
             <label>
@@ -44,15 +41,9 @@
             <div class="pointer"></div>
         </div>
         <div id="result"></div>
-        <button id="spin">Spin</button>
-        <div class="balance-actions">
-            <label>
-                Пополнить баланс:
-                <input type="number" id="deposit-amount" required>
-            </label>
-            <button id="deposit">Пополнить</button>
-            <button id="withdraw">Вывести баланс</button>
-        </div>
     </div>
+
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

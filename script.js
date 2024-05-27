@@ -1,298 +1,127 @@
-document.addEventListener('DOMContentLoaded', async function() {
-    // Убедитесь, что MetaMask установлен
-    if (typeof window.ethereum !== 'undefined') {
-        // Запросить доступ к аккаунтам MetaMask
-        await ethereum.request({ method: 'eth_requestAccounts' });
-        const web3 = new Web3(window.ethereum);
+document.addEventListener('DOMContentLoaded', function() {
+    const padding = {top: 20, right: 40, bottom: 0, left: 0};
+    const w = 500 - padding.left - padding.right;
+    const h = 500 - padding.top - padding.bottom;
+    const r = Math.min(w, h) / 2;
+    let rotation = 0;
+    let oldrotation = 0;
+    let picked = 100000;
+    let oldpick = [];
+    const color = d3.scale.category20();
+    
+    let currentSegments = 4;
+    const resultDiv = document.getElementById('result');
+    const betAmountInput = document.getElementById('bet-amount');
+    const betValueInput = document.getElementById('bet-value');
+    const spinButton = document.getElementById('spin');
+    const balanceSpan = document.getElementById('balance');
+    
+    let balance = 1000; // Initial balance
 
-        // Адрес контракта и ABI (Application Binary Interface)
-        const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
-        const contractABI = [ [
-            {
-                "inputs": [],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "internalType": "string",
-                        "name": "message",
-                        "type": "string"
-                    },
-                    {
-                        "indexed": false,
-                        "internalType": "string",
-                        "name": "returnValue",
-                        "type": "string"
-                    }
-                ],
-                "name": "PaymentEvent",
-                "type": "event"
-            },
-            {
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "fallback"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "balance",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [],
-                "name": "doPayment",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getBalance",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getSegments",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [],
-                "name": "kill",
-                "outputs": [],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "owner",
-                "outputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "newSegments",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "setSegments",
-                "outputs": [],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "amount",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "withdrawBalance",
-                "outputs": [],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
-        ] ];
-
-        const contract = new web3.eth.Contract(contractABI, contractAddress);
-
-        // Получение аккаунта пользователя
-        const accounts = await web3.eth.getAccounts();
-        const account = accounts[0];
-
-        // Получение прошлых событий
-        contract.getPastEvents('PaymentEvent', { fromBlock: 0, toBlock: 'latest' }, (error, events) => {
-            if (error) {
-                console.error('Error fetching events:', error);
-            } else {
-                console.log('Fetched events:', events);
-                // Здесь вы можете обработать полученные события
-            }
-        });
-
-        const balanceSpan = document.getElementById('balance');
-        const betAmountInput = document.getElementById('bet-amount');
-        const betValueInput = document.getElementById('bet-value');
-        const spinButton = document.getElementById('spin');
-        const resultDiv = document.getElementById('result');
-        const depositAmountInput = document.getElementById('deposit-amount');
-        const depositButton = document.getElementById('deposit');
-        const withdrawButton = document.getElementById('withdraw');
-
-        // Обновление баланса на экране
-        async function updateBalance() {
-            const balance = await contract.methods.getBalance().call();
-            balanceSpan.innerText = balance;
-        }
-
-        // Функция для внесения платежа
-        async function makePayment(betAmount) {
-            await contract.methods.doPayment().send({
-                from: account,
-                value: web3.utils.toWei(betAmount, 'ether')
-            });
-        }
-
-        // Функция для пополнения баланса
-        async function depositFunds(amount) {
-            await web3.eth.sendTransaction({
-                from: account,
-                to: contractAddress,
-                value: web3.utils.toWei(amount, 'ether')
-            });
-            updateBalance();
-        }
-
-        // Функция для вывода баланса
-        async function withdrawFunds() {
-            const balance = await contract.methods.getBalance().call();
-            await contract.methods.withdrawBalance(balance).send({ from: account });
-            updateBalance();
-        }
-
-        // Обработчик клика на кнопку Spin
-        spinButton.addEventListener('click', async () => {
-            const betAmount = parseFloat(betAmountInput.value);
-            if (!isNaN(betAmount) && betAmount > 0) {
-                await makePayment(betAmount.toString());
-                spin();
-            } else {
-                alert("Пожалуйста, введите корректную сумму ставки.");
-            }
-        });
-
-        // Обработчик клика на кнопку пополнения
-        depositButton.addEventListener('click', async () => {
-            const depositAmount = parseFloat(depositAmountInput.value);
-            if (!isNaN(depositAmount) && depositAmount > 0) {
-                await depositFunds(depositAmount.toString());
-            } else {
-                alert("Пожалуйста, введите корректную сумму для пополнения.");
-            }
-        });
-
-        // Обработчик клика на кнопку вывода
-        withdrawButton.addEventListener('click', async () => {
-            await withdrawFunds();
-        });
-
-        // Пример обработки события
-        contract.events.PaymentEvent()
-    .on('data', (event) => {
-        console.log(event.returnValues);
-        // Здесь вы можете обработать полученное событие
-    })
-    .on('error', (error) => {
-        console.error('Error fetching events:', error);
-    });
-
-        // Обработчик изменения количества сегментов
-        document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
-            radio.addEventListener('change', async event => {
-                const newSegments = parseInt(event.target.value);
-                await contract.methods.setSegments(newSegments).send({ from: account });
-                drawWheel(newSegments);
-            });
-        });
-
-        // Обновить баланс при загрузке
-        updateBalance();
-
-        // Остальной ваш код...
-
-   // Остальной ваш код...
+    const svg = d3.select('#chart')
+        .append("svg")
+        .data([[]])
+        .attr("width",  w + padding.left + padding.right)
+        .attr("height", h + padding.top + padding.bottom);
+    
+    const container = svg.append("g")
+        .attr("class", "chartholder")
+        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
+    
+    const vis = container.append("g");
+    
+    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
+    
+    const arc = d3.svg.arc().outerRadius(r);
+    
+    function drawWheel(segments) {
+        const data = Array.from({length: segments}, (_, i) => ({
+            label: `Значение ${i + 1}`,
+            value: i + 1,
+        }));
+        
+        svg.data([data]);
+        
+        const arcs = vis.selectAll("g.slice")
+            .data(pie(data))
+            .enter()
+            .append("g")
+            .attr("class", "slice");
+        
+        arcs.append("path")
+            .attr("fill", (d, i) => color(i))
+            .attr("d", arc);
+        
+        arcs.append("text")
+            .attr("transform", function(d) {
+                d.innerRadius = 0;
+                d.outerRadius = r;
+                d.angle = (d.startAngle + d.endAngle) / 2;
+                return `rotate(${d.angle * 180 / Math.PI - 90})translate(${d.outerRadius - 10})`;
+            })
+            .attr("text-anchor", "end")
+            .text((d, i) => data[i].label);
+        
+        container.on("click", spin);
+        
+        svg.append("g")
+            .attr("transform", `translate(${w + padding.left + padding.right}, ${(h / 2) + padding.top})`)
+            .append("path")
+            .attr("d", `M-${r * .15},0L0,${r * .05}L0,-${r * .05}Z`)
+            .style({"fill":"black"});
+        
+        container.append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 60)
+            .style({"fill":"white","cursor":"pointer"});
+        
+        container.append("text")
+            .attr("x", 0)
+            .attr("y", 15)
+            .attr("text-anchor", "middle")
+            .text("SPIN")
+            .style({"font-weight":"bold", "font-size":"30px"});
+    }
+    
     function spin() {
         const betAmount = parseFloat(betAmountInput.value);
         const betValue = parseInt(betValueInput.value);
-
+        
         if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
             alert("Пожалуйста, введите корректные значения ставки и числа.");
             return;
         }
-
+        
         if (betAmount > balance) {
             alert("Недостаточно средств на балансе.");
             return;
         }
-
+        
         container.on("click", null);
-
+        
         if (oldpick.length === currentSegments) {
             container.on("click", null);
             return;
         }
-
+        
         const ps = 360 / currentSegments;
         const rng = Math.floor((Math.random() * 1440) + 360);
-
+        
         rotation = (Math.round(rng / ps) * ps);
-
+        
         picked = Math.round(currentSegments - (rotation % 360) / ps);
         picked = picked >= currentSegments ? (picked % currentSegments) : picked;
-
+        
         if (oldpick.indexOf(picked) !== -1) {
             spin();
             return;
         } else {
             oldpick.push(picked);
         }
-
+        
         rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
-
+        
         vis.transition()
             .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
             .attrTween("transform", rotTween)
@@ -312,57 +141,26 @@ document.addEventListener('DOMContentLoaded', async function() {
                 container.on("click", spin);
             });
     }
-
-    function drawWheel(segments) {
-        const data = Array.from({length: segments}, (_, i) => ({
-            label: `Значение ${i + 1}`,
-            value: i + 1,
-        }));
-
-        svg.data([data]);
-
-        const arcs = vis.selectAll("g.slice")
-            .data(pie(data))
-            .enter()
-            .append("g")
-            .attr("class", "slice");
-
-        arcs.append("path")
-            .attr("fill", (d, i) => color(i))
-            .attr("d", arc);
-
-        arcs.append("text")
-            .attr("transform", function(d) {
-                d.innerRadius = 0;
-                d.outerRadius = r;
-                d.angle = (d.startAngle + d.endAngle) / 2;
-                return `rotate(${d.angle * 180 / Math.PI - 90})translate(${d.outerRadius - 10})`;
-            })
-            .attr("text-anchor", "end")
-            .text((d, i) => data[i].label);
-
-        container.on("click", spin);
-
-        svg.append("g")
-            .attr("transform", `translate(${w + padding.left + padding.right}, ${(h / 2) + padding.top})`)
-            .append("path")
-            .attr("d", `M-${r * .15},0L0,${r * .05}L0,-${r * .05}Z`)
-            .style({"fill":"black"});
-
-        container.append("circle")
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", 60)
-            .style({"fill":"white","cursor":"pointer"});
-
-        container.append("text")
-            .attr("x", 0)
-            .attr("y", 15)
-            .attr("text-anchor", "middle")
-            .text("SPIN")
-            .style({"font-weight":"bold", "font-size":"30px"});
+    
+    function rotTween(to) {
+        const i = d3.interpolate(oldrotation % 360, rotation);
+        return function(t) {
+            return `rotate(${i(t)})`;
+        };
     }
-    } else {
-        alert('Please install MetaMask!');
-    }
+    
+    document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
+        radio.addEventListener('change', event => {
+            currentSegments = parseInt(event.target.value);
+            oldpick = [];
+            rotation = 0;
+            oldrotation = 0;
+            vis.selectAll("*").remove();
+            drawWheel(currentSegments);
+        });
+    });
+    
+    spinButton.addEventListener('click', spin);
+    
+    drawWheel(currentSegments);
 });
