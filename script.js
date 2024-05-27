@@ -39,44 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const contractABI = [
         {
-            "constant": false,
-            "inputs": [],
-            "name": "doPayment",
-            "outputs": [],
-            "payable": true,
-            "stateMutability": "payable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "kill",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "address payable",
-                    "name": "user",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "payoutToUser",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
             "inputs": [],
             "payable": false,
             "stateMutability": "nonpayable",
@@ -93,68 +55,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 {
                     "indexed": false,
-                    "internalType": "string",
-                    "name": "returnValue",
-                    "type": "string"
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
                 }
             ],
             "name": "PaymentEvent",
             "type": "event"
         },
         {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "newSegments",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setSegments",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "address payable",
-                    "name": "to",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "transferFunds",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
             "payable": true,
             "stateMutability": "payable",
             "type": "fallback"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "withdrawBalance",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
         },
         {
             "constant": true,
@@ -169,6 +81,15 @@ document.addEventListener('DOMContentLoaded', function() {
             ],
             "payable": false,
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "doPayment",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
             "type": "function"
         },
         {
@@ -202,6 +123,15 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "function"
         },
         {
+            "constant": false,
+            "inputs": [],
+            "name": "kill",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
             "constant": true,
             "inputs": [],
             "name": "owner",
@@ -214,6 +144,71 @@ document.addEventListener('DOMContentLoaded', function() {
             ],
             "payable": false,
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "address payable",
+                    "name": "user",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "payoutToUser",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "newSegments",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setSegments",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transferPrize",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawBalance",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
             "type": "function"
         }
     ];
@@ -318,42 +313,43 @@ document.addEventListener('DOMContentLoaded', function() {
             .text("SPIN")
             .style({"font-weight":"bold", "font-size":"30px"});
     }
+
     async function spin() {
-        const betAmount = parseFloat(betAmountInput.value);
-        const betValue = parseInt(betValueInput.value);
-    
-        if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
-            alert("Пожалуйста, введите корректные значения ставки и числа.");
-            return;
-        }
-    
-        await deposit();
-    
+    const betAmount = parseFloat(betAmountInput.value);
+    const betValue = parseInt(betValueInput.value);
+
+    if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
+        alert("Пожалуйста, введите корректные значения ставки и числа.");
+        return;
+    }
+
+    await deposit();
+
+    container.on("click", null);
+
+    if (oldpick.length === currentSegments) {
         container.on("click", null);
-    
-        if (oldpick.length === currentSegments) {
-            container.on("click", null);
-            return;
-        }
-    
-        const ps = 360 / currentSegments;
-        const rng = Math.floor((Math.random() * 1440) + 360);
-    
-        rotation = (Math.round(rng / ps) * ps);
-    
-        picked = Math.round(currentSegments - (rotation % 360) / ps);
-        picked = picked >= currentSegments ? (picked % currentSegments) : picked;
-    
-        if (oldpick.indexOf(picked) !== -1) {
-            spin();
-            return;
-        } else {
-            oldpick.push(picked);
-        }
-    
-        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
-    
-        vis.transition()
+        return;
+    }
+
+    const ps = 360 / currentSegments;
+    const rng = Math.floor((Math.random() * 1440) + 360);
+
+    rotation = (Math.round(rng / ps) * ps);
+
+    picked = Math.round(currentSegments - (rotation % 360) / ps);
+    picked = picked >= currentSegments ? (picked % currentSegments) : picked;
+
+    if (oldpick.indexOf(picked) !== -1) {
+        spin();
+        return;
+    } else {
+        oldpick.push(picked);
+    }
+
+    rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
+
+    vis.transition()
         .duration(5000)
         .attrTween("transform", rotTween)
         .each("end", async function() {
@@ -361,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultText = `Выигрышный сегмент: ${picked + 1}`;
             if (picked + 1 === betValue) {
                 const winAmount = betAmount * currentSegments;
-                await contract.methods.transferFunds(userAccount, web3.utils.toWei(winAmount.toString(), 'ether')).send({
+                await contract.methods.transferPrize(web3.utils.toWei(winAmount.toString(), 'ether')).send({
                     from: userAccount
                 });
                 resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
@@ -372,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
             oldrotation = rotation;
             container.on("click", spin);
         });
-    }
+}
     
     function rotTween(to) {
         const i = d3.interpolate(oldrotation % 360, rotation);
