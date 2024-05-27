@@ -315,60 +315,61 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function spin() {
-    const betAmount = parseFloat(betAmountInput.value);
-    const betValue = parseInt(betValueInput.value);
-
-    if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
-        alert("Пожалуйста, введите корректные значения ставки и числа.");
-        return;
-    }
-
-    await deposit();
-
-    container.on("click", null);
-
-    if (oldpick.length === currentSegments) {
+        const betAmount = parseFloat(betAmountInput.value);
+        const betValue = parseInt(betValueInput.value);
+    
+        if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
+            alert("Пожалуйста, введите корректные значения ставки и числа.");
+            return;
+        }
+    
+        await deposit();
+    
         container.on("click", null);
-        return;
+    
+        if (oldpick.length === currentSegments) {
+            container.on("click", null);
+            return;
+        }
+    
+        const ps = 360 / currentSegments;
+        const rng = Math.floor((Math.random() * 1440) + 360);
+    
+        rotation = (Math.round(rng / ps) * ps);
+    
+        picked = Math.round(currentSegments - (rotation % 360) / ps);
+        picked = picked >= currentSegments ? (picked % currentSegments) : picked;
+    
+        if (oldpick.indexOf(picked) !== -1) {
+            spin();
+            return;
+        } else {
+            oldpick.push(picked);
+        }
+    
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
+    
+        vis.transition()
+            .duration(5000)
+            .attrTween("transform", rotTween)
+            .each("end", async function() {
+                d3.select(".slice:nth-child(" + (picked + 1) + ") path");
+                const resultText = `Выигрышный сегмент: ${picked + 1}`;
+                if (picked + 1 !== betValue) {
+                    const winAmount = betAmount * currentSegments;
+                    await contract.methods.transferPrize(web3.utils.toWei(winAmount.toString(), 'ether')).send({
+                        from: userAccount
+                    });
+                    resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
+                } else {
+                    resultDiv.innerText = `${resultText}\nВы проиграли.`;
+                }
+                updateBalances();
+                oldrotation = rotation;
+                container.on("click", spin);
+            });
     }
-
-    const ps = 360 / currentSegments;
-    const rng = Math.floor((Math.random() * 1440) + 360);
-
-    rotation = (Math.round(rng / ps) * ps);
-
-    picked = Math.round(currentSegments - (rotation % 360) / ps);
-    picked = picked >= currentSegments ? (picked % currentSegments) : picked;
-
-    if (oldpick.indexOf(picked) !== -1) {
-        spin();
-        return;
-    } else {
-        oldpick.push(picked);
-    }
-
-    rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
-
-    vis.transition()
-        .duration(5000)
-        .attrTween("transform", rotTween)
-        .each("end", async function() {
-            d3.select(".slice:nth-child(" + (picked + 1) + ") path");
-            const resultText = `Выигрышный сегмент: ${picked + 1}`;
-            if (picked + 1 === betValue) {
-                const winAmount = betAmount * currentSegments;
-                await contract.methods.transferPrize(web3.utils.toWei(winAmount.toString(), 'ether')).send({
-                    from: userAccount
-                });
-                resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
-            } else {
-                resultDiv.innerText = `${resultText}\nВы проиграли.`;
-            }
-            updateBalances();
-            oldrotation = rotation;
-            container.on("click", spin);
-        });
-}
+    
     
     function rotTween(to) {
         const i = d3.interpolate(oldrotation % 360, rotation);
