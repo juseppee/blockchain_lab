@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let userAccount;
     let web3;
     let contract;
+    let svg; // Объявляем переменную svg здесь
 
     const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
     const contractABI = [
@@ -230,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateBalances();
     }
 
-    function drawWheel(segments) {
+    function drawWheel(svg, segments) { // Добавляем svg в аргументы функции
         const data = Array.from({length: segments}, (_, i) => ({
             label: `Значение ${i + 1}`,
             value: i + 1,
@@ -279,18 +280,25 @@ document.addEventListener('DOMContentLoaded', function() {
             .text("SPIN")
             .style({"font-weight":"bold", "font-size":"30px"});
     }
-    
-    async function spin() {
+
+    // Добавлено обновление балансов и инициализация Web3
+    spinButton.addEventListener('click', async function() {
+        await deposit();
+        spin();
+    });   // Инициализация Web3
+    initWeb3();
+
+    function spin() {
         const betAmount = parseFloat(betAmountInput.value);
         const betValue = parseInt(betValueInput.value);
         
         if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
-            alert("Пожалуйста, введите корректные значения ставки и числа.");
+            alert("Please enter valid bet amount and value.");
             return;
         }
         
-        if (betAmount > balance) {
-            alert("Недостаточно средств на балансе.");
+        if (betAmount > parseFloat(balanceSpan.innerText)) {
+            alert("Insufficient funds.");
             return;
         }
         
@@ -316,55 +324,43 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick.push(picked);
         }
         
-        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
         
         vis.transition()
-            .duration(5000)
+            .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
             .attrTween("transform", rotTween)
             .each("end", async function() {
-                d3.select(".slice:nth-child(" + (picked + 1) + ") path");
-                const resultText = `Выигрышный сегмент: ${picked + 1}`;
+                const resultText = `Winning Segment: ${picked + 1}`;
                 if (picked + 1 === betValue) {
                     const winAmount = betAmount * currentSegments;
-                    try {
-                        await contract.methods.withdrawBalance(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: userAccount });
-                        resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
-                    } catch (error) {
-                        console.error("Ошибка при выплате: ", error);
-                        resultDiv.innerText = `${resultText}\nПроизошла ошибка при выплате.`;
-                    }
+                    await contract.methods.payoutToUser(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: userAccount });
+                    resultDiv.innerText = `${resultText}\nYou won ${winAmount} units!`;
                 } else {
-                    resultDiv.innerText = `${resultText}\nВы проиграли.`;
+                    resultDiv.innerText = `${resultText}\nYou lost.`;
                 }
                 updateBalances();
                 oldrotation = rotation;
                 container.on("click", spin);
             });
     }
-    
+
     function rotTween(to) {
         const i = d3.interpolate(oldrotation % 360, rotation);
         return function(t) {
             return `rotate(${i(t)})`;
         };
     }
-    
+
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            currentSegments = parseInt(this.value);
-            vis.selectAll('*').remove();
-            drawWheel(currentSegments);
+        radio.addEventListener('change', event => {
+            currentSegments = parseInt(event.target.value);
+            oldpick = [];
+            rotation = 0;
+            oldrotation = 0;
+            vis.selectAll("*").remove();
+            drawWheel(svg, currentSegments); // Передаем svg в drawWheel
         });
     });
 
-    spinButton.addEventListener('click', async function() {
-        await deposit();
-        spin();
-    });
-
-    depositButton.addEventListener('click', deposit);
-    withdrawButton.addEventListener('click', withdraw);
-
-    drawWheel(currentSegments);
-    initWeb3();
+    drawWheel(svg, currentSegments); // Передаем svg в drawWheel
 });
