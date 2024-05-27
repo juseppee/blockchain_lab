@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .each("end", async function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
                 const resultText = `Выигрышный сегмент: ${picked + 1}`;
-                console.log('Calling transferPrize with amount:', winAmountWei);
+                console.log('Calling transferPrize with amount:');
                 if (picked + 1 !== betValue) {  // Приз должен выплачиваться за любое значение кроме указанного
                     const winAmount = betAmount * currentSegments;
                     const winAmountWei = web3.utils.toWei(winAmount.toString(), 'ether');
