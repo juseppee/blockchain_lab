@@ -15,8 +15,193 @@ document.addEventListener('DOMContentLoaded', function() {
     const betValueInput = document.getElementById('bet-value');
     const spinButton = document.getElementById('spin');
     const balanceSpan = document.getElementById('balance');
-    
+    const contractBalanceSpan = document.getElementById('contract-balance');
+
     let balance = 1000; // Initial balance
+
+    // Initialize web3
+    let web3;
+    let contract;
+    const contractAddress = '0xd5A8400aF67526533216aF6DF3E800Ab4245741e';
+    const contractABI = [
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "doPayment",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "kill",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "newSegments",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setSegments",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "message",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "returnValue",
+                    "type": "string"
+                }
+            ],
+            "name": "PaymentEvent",
+            "type": "event"
+        },
+        {
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "fallback"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawBalance",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "balance",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "getBalance",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "getSegments",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ];
+
+    async function initWeb3() {
+        if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            try {
+                await window.ethereum.enable();
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                const accounts = await web3.eth.getAccounts();
+                web3.eth.defaultAccount = accounts[0];
+                updateBalances();
+            } catch (error) {
+                console.error("User denied account access");
+            }
+        } else if (window.web3) {
+            web3 = new Web3(web3.currentProvider);
+            contract = new web3.eth.Contract(contractABI, contractAddress);
+            updateBalances();
+        } else {
+            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+        }
+    }
+
+    async function updateBalances() {
+        const balance = await web3.eth.getBalance(web3.eth.defaultAccount);
+        balanceSpan.innerText = web3.utils.fromWei(balance, 'ether');
+        const contractBalance = await contract.methods.getBalance().call();
+        contractBalanceSpan.innerText = web3.utils.fromWei(contractBalance, 'ether');
+    }
+
+    async function deposit() {
+        const amount = web3.utils.toWei(betAmountInput.value, 'ether');
+        await contract.methods.doPayment().send({ from: web3.eth.defaultAccount, value: amount });
+        updateBalances();
+    }
+
+    async function withdraw(amount) {
+        await contract.methods.withdrawBalance(web3.utils.toWei(amount, 'ether')).send({ from: web3.eth.defaultAccount });
+        updateBalances();
+    }
 
     const svg = d3.select('#chart')
         .append("svg")
@@ -84,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .style({"font-weight":"bold", "font-size":"30px"});
     }
     
-    function spin() {
+    async function spin() {
         const betAmount = parseFloat(betAmountInput.value);
         const betValue = parseInt(betValueInput.value);
         
@@ -93,11 +278,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (betAmount > balance) {
-            alert("Недостаточно средств на балансе.");
+        const weiBetAmount = web3.utils.toWei(betAmountInput.value, 'ether');
+        
+        const userBalance = await contract.methods.getBalance().call({ from: web3.eth.defaultAccount });
+        if (weiBetAmount > userBalance) {
+            alert("Недостаточно средств на балансе контракта.");
             return;
         }
-        
+
         container.on("click", null);
         
         if (oldpick.length === currentSegments) {
@@ -125,18 +313,18 @@ document.addEventListener('DOMContentLoaded', function() {
         vis.transition()
             .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
             .attrTween("transform", rotTween)
-            .each("end", function() {
+            .each("end", async function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
                 const resultText = `Winning Segment: ${picked + 1}`;
+                let winAmount = 0;
                 if (picked + 1 === betValue) {
-                    const winAmount = betAmount * currentSegments;
-                    balance += winAmount;
+                    winAmount = betAmount * currentSegments;
+                    await contract.methods.withdrawBalance(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: web3.eth.defaultAccount });
                     resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
-                    balance -= betAmount;
                     resultDiv.innerText = `${resultText}\nВы проиграли.`;
                 }
-                balanceSpan.innerText = balance;
+                await updateBalances();
                 oldrotation = rotation;
                 container.on("click", spin);
             });
@@ -160,39 +348,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    spinButton.addEventListener('click', spin);
-    
+    spinButton.addEventListener('click', async function() {
+        await deposit();
+        spin();
+    });
+
     drawWheel(currentSegments);
-
-    // MetaMask Integration
-    async function initializeMetaMask() {
-        if (window.ethereum === undefined) {
-            alert('Please install MetaMask!');
-        } else {
-            try {
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                console.log('Connected account:', account);
-                getBalance(account);
-            } catch (error) {
-                console.error('Error connecting to MetaMask:', error);
-            }
-        }
-    }
-
-    async function getBalance(account) {
-        try {
-            const balance = await ethereum.request({
-                method: 'eth_getBalance',
-                params: [account, 'latest']
-            });
-            const ethBalance = parseInt(balance, 16) / 1e18;
-            console.log('Баланс:', ethBalance);
-            balanceSpan.innerText = ethBalance.toFixed(4); // Display ETH balance
-        } catch (error) {
-            console.error('Error getting balance:', error);
-        }
-    }
-
-    initializeMetaMask();
+    initWeb3();
 });

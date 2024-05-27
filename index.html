@@ -10,7 +10,10 @@
     <div class="container">
         <h1>Колесо рандома</h1>
         <div class="balance">
-            Баланс: <span id="balance">0</span> ETH
+            Баланс MetaMask: <span id="balance">0</span> ETH
+        </div>
+        <div class="balance">
+            Баланс на контракте: <span id="contract-balance">0</span> ETH
         </div>
         <div class="betting">
             <label>
@@ -41,10 +44,10 @@
             <div class="pointer"></div>
         </div>
         <div id="result"></div>
-        <button id="spin">Spin</button>
     </div>
 
     <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
