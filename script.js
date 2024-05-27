@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const padding = {top: 20, right: 40, bottom: 0, left: 0};
+    const padding = { top: 20, right: 40, bottom: 0, left: 0 };
     const w = 500 - padding.left - padding.right;
     const h = 500 - padding.top - padding.bottom;
     const r = Math.min(w, h) / 2;
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let picked = 100000;
     let oldpick = [];
     const color = d3.scale.category20();
-    
+
     let currentSegments = 4;
     const resultDiv = document.getElementById('result');
     const betAmountInput = document.getElementById('bet-amount');
@@ -18,23 +18,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const contractBalanceSpan = document.getElementById('contract-balance');
     const depositButton = document.getElementById('deposit');
     const withdrawButton = document.getElementById('withdraw');
-    
+
     let balance = 0;
 
     const svg = d3.select('#chart')
         .append("svg")
         .data([[]])
-        .attr("width",  w + padding.left + padding.right)
+        .attr("width", w + padding.left + padding.right)
         .attr("height", h + padding.top + padding.bottom);
-    
+
     const container = svg.append("g")
         .attr("class", "chartholder")
         .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
-    
+
     const vis = container.append("g");
-    
+
     const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
-    
+
     const arc = d3.svg.arc().outerRadius(r);
     
     const contractABI = [
