@@ -19,14 +19,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const depositButton = document.getElementById('deposit');
     const withdrawButton = document.getElementById('withdraw');
     
-    let balance = 1000; // Initial balance
-    let userAccount;
-    let web3;
-    let contract;
-    let svg; // Объявляем переменную svg здесь
+    let balance = 0;
 
-    const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
+    const svg = d3.select('#chart')
+        .append("svg")
+        .data([[]])
+        .attr("width",  w + padding.left + padding.right)
+        .attr("height", h + padding.top + padding.bottom);
+    
+    const container = svg.append("g")
+        .attr("class", "chartholder")
+        .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
+    
+    const vis = container.append("g");
+    
+    const pie = d3.layout.pie().sort(null).value(function(d) { return 1; });
+    
+    const arc = d3.svg.arc().outerRadius(r);
+    
     const contractABI = [
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "doPayment",
+            "outputs": [],
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "kill",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "newSegments",
+                    "type": "uint256"
+                }
+            ],
+            "name": "setSegments",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
         {
             "inputs": [],
             "payable": false,
@@ -58,6 +102,21 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "fallback"
         },
         {
+            "constant": false,
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawBalance",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
             "constant": true,
             "inputs": [],
             "name": "balance",
@@ -70,15 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ],
             "payable": false,
             "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "doPayment",
-            "outputs": [],
-            "payable": true,
-            "stateMutability": "payable",
             "type": "function"
         },
         {
@@ -112,15 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "function"
         },
         {
-            "constant": false,
-            "inputs": [],
-            "name": "kill",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
             "constant": true,
             "inputs": [],
             "name": "owner",
@@ -134,53 +175,13 @@ document.addEventListener('DOMContentLoaded', function() {
             "payable": false,
             "stateMutability": "view",
             "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "payoutToUser",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "newSegments",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setSegments",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "withdrawBalance",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
         }
-    ];
+    ]
+
+    const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
+    let web3;
+    let contract;
+    let userAccount;
 
     async function initWeb3() {
         if (window.ethereum) {
@@ -195,7 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("User denied account access");
             }
         } else {
-            console.log('Please install MetaMask!');
             alert('Please install MetaMask!');
         }
     }
@@ -209,29 +209,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function deposit() {
-        const amount = parseFloat(betAmountInput.value);
-        if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid amount');
-            return;
-        }
+        const depositAmount = betAmountInput.value;
+        if (depositAmount <= 0) return;
+
         await contract.methods.doPayment().send({
             from: userAccount,
-            value: web3.utils.toWei(amount.toString(), 'ether')
+            value: web3.utils.toWei(depositAmount, 'ether')
         });
         updateBalances();
     }
 
     async function withdraw() {
-        const amount = parseFloat(prompt('Enter amount to withdraw:'));
-        if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid amount');
-            return;
-        }
-        await contract.methods.withdrawBalance(web3.utils.toWei(amount.toString(), 'ether')).send({ from: userAccount });
+        const withdrawAmount = betAmountInput.value;
+        if (withdrawAmount <= 0) return;
+
+        await contract.methods.withdrawBalance(web3.utils.toWei(withdrawAmount, 'ether')).send({
+            from: userAccount
+        });
         updateBalances();
     }
 
-    function drawWheel(svg, segments) { // Добавляем svg в аргументы функции
+    function drawWheel(segments) {
         const data = Array.from({length: segments}, (_, i) => ({
             label: `Значение ${i + 1}`,
             value: i + 1,
@@ -280,30 +278,20 @@ document.addEventListener('DOMContentLoaded', function() {
             .text("SPIN")
             .style({"font-weight":"bold", "font-size":"30px"});
     }
-
-    // Добавлено обновление балансов и инициализация Web3
-    spinButton.addEventListener('click', async function() {
-        await deposit();
-        spin();
-    });   // Инициализация Web3
-    initWeb3();
-
-    function spin() {
+    
+    async function spin() {
         const betAmount = parseFloat(betAmountInput.value);
         const betValue = parseInt(betValueInput.value);
         
         if (isNaN(betAmount) || isNaN(betValue) || betValue < 1 || betValue > currentSegments) {
-            alert("Please enter valid bet amount and value.");
+            alert("Пожалуйста, введите корректные значения ставки и числа.");
             return;
         }
-        
-        if (betAmount > parseFloat(balanceSpan.innerText)) {
-            alert("Insufficient funds.");
-            return;
-        }
-        
+
+        await deposit();
+
         container.on("click", null);
-        
+
         if (oldpick.length === currentSegments) {
             container.on("click", null);
             return;
@@ -324,43 +312,53 @@ document.addEventListener('DOMContentLoaded', function() {
             oldpick.push(picked);
         }
         
-        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2); // добавляем случайное смещение
+        rotation += 90 - Math.round(ps / 2) + (Math.random() * ps - ps / 2);
         
         vis.transition()
-            .duration(5000) // Увеличиваем продолжительность для уменьшения скорости
+            .duration(5000)
             .attrTween("transform", rotTween)
             .each("end", async function() {
-                const resultText = `Winning Segment: ${picked + 1}`;
+                d3.select(".slice:nth-child(" + (picked + 1) + ") path");
+                const resultText = `Выигрышный сегмент: ${picked + 1}`;
                 if (picked + 1 === betValue) {
                     const winAmount = betAmount * currentSegments;
-                    await contract.methods.payoutToUser(web3.utils.toWei(winAmount.toString(), 'ether')).send({ from: userAccount });
-                    resultDiv.innerText = `${resultText}\nYou won ${winAmount} units!`;
+                    await contract.methods.doPayment().send({
+                        from: userAccount,
+                        value: web3.utils.toWei(winAmount.toString(), 'ether')
+                    });
+                    resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
-                    resultDiv.innerText = `${resultText}\nYou lost.`;
+                    resultDiv.innerText = `${resultText}\nВы проиграли.`;
                 }
                 updateBalances();
                 oldrotation = rotation;
                 container.on("click", spin);
             });
     }
-
+    
     function rotTween(to) {
         const i = d3.interpolate(oldrotation % 360, rotation);
         return function(t) {
             return `rotate(${i(t)})`;
         };
     }
-
+    
     document.querySelectorAll('input[name="wheel-options"]').forEach(radio => {
-        radio.addEventListener('change', event => {
-            currentSegments = parseInt(event.target.value);
-            oldpick = [];
-            rotation = 0;
-            oldrotation = 0;
-            vis.selectAll("*").remove();
-            drawWheel(svg, currentSegments); // Передаем svg в drawWheel
+        radio.addEventListener('change', function() {
+            currentSegments = parseInt(this.value);
+            vis.selectAll('*').remove(); // Очистить старые сегменты
+            drawWheel(currentSegments);
         });
     });
 
-    drawWheel(svg, currentSegments); // Передаем svg в drawWheel
+    spinButton.addEventListener('click', async function() {
+        await deposit();
+        spin();
+    });
+
+    depositButton.addEventListener('click', deposit);
+    withdrawButton.addEventListener('click', withdraw);
+
+    drawWheel(currentSegments);
+    initWeb3();
 });
