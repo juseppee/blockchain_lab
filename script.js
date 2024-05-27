@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const web3 = new Web3(window.ethereum);
 
         // Адрес контракта и ABI (Application Binary Interface)
-        const contractAddress = 'YOUR_CONTRACT_ADDRESS';
+        const contractAddress = '0x4bCC4d60cFfa3836bE33297F75fDFFd9455c5D08';
         const contractABI = [ [
             {
                 "inputs": [],
