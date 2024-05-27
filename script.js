@@ -360,15 +360,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     const winAmount = betAmount * currentSegments;
                     const winAmountWei = web3.utils.toWei(winAmount.toString(), 'ether');
                     
-                    // Логирование перед вызовом transferPrize
-                    console.log('Calling transferPrize with amount:', winAmountWei);
-                    await contract.methods.transferPrize(winAmountWei).send({
-                        from: contractAddress
-                    }).on('receipt', function(receipt) {
-                        console.log('Transfer prize receipt:', receipt);
-                    }).on('error', function(error) {
-                        console.error('Error transferring prize:', error);
-                    });
+                   // Предполагая, что winAmountWei определена здесь
+                console.log('Calling transferPrize with amount:', winAmountWei);
+                await contract.methods.transferPrize(winAmountWei).send({
+                    from: contractAddress // Этот параметр определяет, от кого будет выполнен вызов функции в контракте
+                }).on('receipt', function(receipt) {
+                    console.log('Transfer prize receipt:', receipt);
+                }).on('error', function(error) {
+                    console.error('Error transferring prize:', error);
+                });
     
                     resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
