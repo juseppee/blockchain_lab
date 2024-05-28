@@ -381,19 +381,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path");
                 const resultText = `Выигрышный сегмент: ${picked + 1}`;
                 console.log('Calling transferPrize with amount:');
-                if (picked + 1 !== betValue) {  // Приз должен выплачиваться за любое значение кроме указанного
+
+                if (picked + 1 === betValue) {  
                     const winAmount = betAmount * currentSegments;
                     const winAmountWei = web3.utils.toWei(winAmount.toString(), 'ether');
-                    
-                   // Предполагая, что winAmountWei определена здесь
-                console.log('Calling transferPrize with amount:', winAmountWei);
-                await contract.methods.transferPrize(winAmountWei).send({
-                    from: ethereum.selectedAddress // Этот параметр определяет, от кого будет выполнен вызов функции в контракте
-                }).on('receipt', function(receipt) {
-                    console.log('Transfer prize receipt:', receipt);
-                }).on('error', function(error) {
-                    console.error('Error transferring prize:', error);
-                });
+    
+                    await contract.methods.transferPrize(winAmountWei).send({
+                        from: ethereum.selectedAddress 
+                    }).on('receipt', function(receipt) {
+                      
+                    }).on('error', function(error) {
+                        
+                    });
+    
     
                     resultDiv.innerText = `${resultText}\nВы выиграли ${winAmount} единиц!`;
                 } else {
