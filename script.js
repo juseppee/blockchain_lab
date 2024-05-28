@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinButton = document.getElementById('spin');
     const balanceSpan = document.getElementById('balance');
     const contractBalanceSpan = document.getElementById('contract-balance');
-    const depositButton = document.getElementById('deposit');
-    const withdrawButton = document.getElementById('withdraw');
 
     let balance = 0;
 
@@ -391,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }).on('receipt', function(receipt) {
                       
                     }).on('error', function(error) {
-                        
+
                     });
     
     
@@ -425,9 +423,6 @@ document.addEventListener('DOMContentLoaded', function() {
         await deposit();
         spin();
     });
-
-    depositButton.addEventListener('click', deposit);
-    withdrawButton.addEventListener('click', withdraw);
 
     drawWheel(currentSegments);
     initWeb3();
